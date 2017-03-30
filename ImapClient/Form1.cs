@@ -15,6 +15,7 @@ namespace ImapClient
         public Form1()
         {
             InitializeComponent();
+            // Init
         }
     }
 }
