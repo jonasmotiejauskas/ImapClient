@@ -10,32 +10,25 @@ using System.Windows.Forms;
 
 namespace ImapClient
 {
+    internal delegate void DestructAllForms();
+
     public partial class ImapClientForm : Form
     {
+        DestructAllForms DAF;
+
         MyImapClient imapClient = new MyImapClient();
 
+        // Window for connecting to IMAP server
         #region connectWindowElements
         Label connectLabel = new Label() { Text = "IMAP CLIENT", Font = new Font("Arial", 32, FontStyle.Bold), Anchor = AnchorStyles.None, Width = 300, Height = 80, TextAlign = ContentAlignment.MiddleCenter };
         Button connectButton = new Button() { Text = "Connect", Width = 140, Height = 30, Visible = true, Anchor = AnchorStyles.None };
         TextBox connectAddressInput = new TextBox() { Anchor = AnchorStyles.None, Width = 140, Height = 60, MaxLength = 50};
         Label connectErrorLabel = new Label() { Anchor = AnchorStyles.None, ForeColor = Color.Red, Font = new Font("Arial", 8, FontStyle.Bold), TextAlign = ContentAlignment.TopCenter, Width = 150, Height = 100 };
         #endregion connectWindowElements
-
-        public ImapClientForm()
-        {
-            InitializeComponent();
-            this.Text = "IMAP client";
-            this.CenterToScreen();
-        }
-
-        private void ImapClientForm_Shown(object sender, EventArgs e)
-        {
-            constructConnectWindow("");
-        }
-
         #region connectWindow
-        private void constructConnectWindow(String errorMessage)
+        private void ConstructConnectWindow(string errorMessage)
         {
+            DAF();
             this.MinimumSize = new Size(350, 350);
             connectErrorLabel.Text = errorMessage;
 
@@ -59,7 +52,7 @@ namespace ImapClient
             connectButton.Click += ConnectButton_Click;
         }
 
-        private void destructConnectionWindow()
+        private void DestructConnectionWindow()
         {
             this.Controls.Remove(connectButton);
             this.Controls.Remove(connectLabel);
@@ -80,11 +73,23 @@ namespace ImapClient
             }
             catch(Exception)
             {
-                destructConnectionWindow();
-                constructConnectWindow("Failed to connect to the server");
+                ConstructConnectWindow("Failed to connect to the server");
             }
         }
         #endregion
+
+        public ImapClientForm()
+        {
+            InitializeComponent();
+            this.Text = "IMAP client";
+            this.CenterToScreen();
+            DAF += DestructConnectionWindow;
+        }
+
+        private void ImapClientForm_Shown(object sender, EventArgs e)
+        {
+            ConstructConnectWindow("");
+        }
 
     }
 }
