@@ -21,8 +21,8 @@ namespace ImapClient
         // Window for connecting to IMAP server
         #region connectWindowElements
         Label connectLabel = new Label() { Text = "IMAP CLIENT", Font = new Font("Arial", 32, FontStyle.Bold), Anchor = AnchorStyles.None, Width = 300, Height = 80, TextAlign = ContentAlignment.MiddleCenter };
-        Button connectButton = new Button() { Text = "Connect", Width = 140, Height = 30, Visible = true, Anchor = AnchorStyles.None };
-        TextBox connectAddressInput = new TextBox() { Anchor = AnchorStyles.None, Width = 140, Height = 60, MaxLength = 50};
+        Button connectButton = new Button() { Enabled = false, Text = "Connect", Width = 140, Height = 30, Visible = true, Anchor = AnchorStyles.None };
+        TextBox connectAddressInput = new TextBox() { Text = "Server Address", Anchor = AnchorStyles.None, Width = 140, Height = 60, MaxLength = 50};
         Label connectErrorLabel = new Label() { Anchor = AnchorStyles.None, ForeColor = Color.Red, Font = new Font("Arial", 8, FontStyle.Bold), TextAlign = ContentAlignment.TopCenter, Width = 150, Height = 100 };
         CheckBox connectSecure = new CheckBox() { CheckState = CheckState.Checked, Anchor = AnchorStyles.None};
         Label connectSecureLabel = new Label() { Anchor = AnchorStyles.None, Font = new Font("Arial", 10), TextAlign = ContentAlignment.MiddleLeft, Text = "Secure Connection", Height = 50 };
@@ -31,14 +31,14 @@ namespace ImapClient
         private void ConstructConnectWindow(string errorMessage)
         {
             DAW();
-            this.MinimumSize = new Size(350, 350);
+            this.MinimumSize = new Size(500, 400);
             connectErrorLabel.Text = errorMessage;
 
-            connectButton.Enabled = true;
             connectLabel.Enabled = true;
             connectAddressInput.Enabled = true;
             connectErrorLabel.Enabled = true;
             connectSecure.Enabled = true;
+            connectSecureLabel.Enabled = true;
 
             connectButton.Left = (this.ClientSize.Width - connectButton.Width) / 2;
             connectButton.Top = (this.ClientSize.Height - connectButton.Height + 60) / 2;
@@ -61,6 +61,37 @@ namespace ImapClient
             this.Controls.Add(connectSecureLabel);
 
             connectButton.Click += ConnectButton_Click;
+            connectAddressInput.GotFocus += ConnectAddressInput_GotFocus;
+            connectAddressInput.LostFocus += ConnectAddressInput_LostFocus;
+            connectAddressInput.TextChanged += ConnectAddressInput_TextChanged;
+        }
+
+        private void ConnectAddressInput_TextChanged(object sender, EventArgs e)
+        {
+            if (connectAddressInput.Text == "" || connectAddressInput.Text == "Server Address")
+            {
+                connectButton.Enabled = false;
+            }
+            else
+            {
+                connectButton.Enabled = true;
+            }
+        }
+
+        private void ConnectAddressInput_LostFocus(object sender, EventArgs e)
+        {
+            if (connectAddressInput.Text == "")
+            {
+                connectAddressInput.Text = "Server Address";
+            }
+        }
+
+        private void ConnectAddressInput_GotFocus(object sender, EventArgs e)
+        {
+            if(connectAddressInput.Text == "Server Address")
+            {
+                connectAddressInput.Text = "";
+            }
         }
 
         private void DestructConnectionWindow()
@@ -72,6 +103,9 @@ namespace ImapClient
             this.Controls.Remove(connectSecure);
             this.Controls.Remove(connectSecureLabel);
             connectButton.Click -= ConnectButton_Click;
+            connectAddressInput.GotFocus -= ConnectAddressInput_GotFocus;
+            connectAddressInput.LostFocus -= ConnectAddressInput_LostFocus;
+            connectAddressInput.TextChanged -= ConnectAddressInput_TextChanged;
         }
 
         private void ConnectButton_Click(object sender, EventArgs e)
