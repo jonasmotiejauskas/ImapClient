@@ -14,13 +14,15 @@ namespace ImapClient
         int bytes = -1;
         byte[] buffer;
         StringBuilder sb = new StringBuilder();
+        int port;
 
-        public void Connect(string address)
+        public void Connect(string address, bool secure)
         {
+            port = secure? 993 : 143;
             try
             {
                 tcpc = new System.Net.Sockets.TcpClient();
-                if (!tcpc.ConnectAsync(address, 993).Wait(5000))
+                if (!tcpc.ConnectAsync(address, port).Wait(5000))
                 {
                     throw new Exception("Connection timed out");
                 }
