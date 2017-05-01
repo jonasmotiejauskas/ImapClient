@@ -20,12 +20,12 @@ namespace ImapClient
 
         // Window for connecting to IMAP server
         #region connectWindowElements
-        Label connectLabel = new Label() { Text = "IMAP CLIENT", Font = new Font("Arial", 32, FontStyle.Bold), Anchor = AnchorStyles.None, Width = 300, Height = 80, TextAlign = ContentAlignment.MiddleCenter };
-        Button connectButton = new Button() { Enabled = false, Text = "Connect", Width = 140, Height = 30, Visible = true, Anchor = AnchorStyles.None };
-        TextBox connectAddressInput = new TextBox() { Text = "Server Address", Anchor = AnchorStyles.None, Width = 140, Height = 60, MaxLength = 50};
-        Label connectErrorLabel = new Label() { Anchor = AnchorStyles.None, ForeColor = Color.Red, Font = new Font("Arial", 8, FontStyle.Bold), TextAlign = ContentAlignment.TopCenter, Width = 150, Height = 100 };
-        CheckBox connectSecure = new CheckBox() { CheckState = CheckState.Checked, Anchor = AnchorStyles.None};
-        Label connectSecureLabel = new Label() { Anchor = AnchorStyles.None, Font = new Font("Arial", 10), TextAlign = ContentAlignment.MiddleLeft, Text = "Secure Connection", Height = 50 };
+        Label       connectLabel = new Label() { Text = "IMAP CLIENT", Font = new Font("Arial", 32, FontStyle.Bold), Anchor = AnchorStyles.None, Width = 300, Height = 80, TextAlign = ContentAlignment.MiddleCenter };
+        Button      connectButton = new Button() { Enabled = false, Text = "Connect", Width = 140, Height = 30, Visible = true, Anchor = AnchorStyles.None };
+        TextBox     connectAddressInput = new TextBox() { Text = "Server Address", Anchor = AnchorStyles.None, Width = 140, Height = 60, MaxLength = 50};
+        Label       connectErrorLabel = new Label() { Anchor = AnchorStyles.None, ForeColor = Color.Red, Font = new Font("Arial", 8, FontStyle.Bold), TextAlign = ContentAlignment.TopCenter, Width = 150, Height = 100 };
+        CheckBox    connectSecure = new CheckBox() { CheckState = CheckState.Checked, Anchor = AnchorStyles.None};
+        Label       connectSecureLabel = new Label() { Anchor = AnchorStyles.None, Font = new Font("Arial", 10), TextAlign = ContentAlignment.MiddleLeft, Text = "Secure Connection", Height = 50 };
         #endregion connectWindowElements
         #region connectWindow
         private void ConstructConnectWindow(string errorMessage)
@@ -39,6 +39,7 @@ namespace ImapClient
             connectErrorLabel.Enabled = true;
             connectSecure.Enabled = true;
             connectSecureLabel.Enabled = true;
+            connectButton.Enabled = true;
 
             connectButton.Left = (this.ClientSize.Width - connectButton.Width) / 2;
             connectButton.Top = (this.ClientSize.Height - connectButton.Height + 60) / 2;
@@ -124,6 +125,39 @@ namespace ImapClient
             }
         }
         #endregion
+
+        // Window for logging in to IMAP server
+        #region loginWindowElements
+        Label       loginTitleLabel = new Label() { Text = "Please login", Font = new Font("Arial", 10), Anchor = AnchorStyles.None, TextAlign = ContentAlignment.MiddleLeft };
+        TextBox     loginUsernameTextBox;
+        TextBox     loginPasswordTextBox;
+        Button      loginAuthButton;
+        Label       loginErrorLabel;
+        #endregion loginWindowElements
+        #region loginWindow
+
+        private void costructLoginWindow(string errorMessage)
+        {
+            DAW();
+            this.MinimumSize = new Size(500, 400);
+            loginErrorLabel.Text = errorMessage;
+
+            loginTitleLabel.Enabled = true;
+            loginUsernameTextBox.Enabled = true;
+            loginPasswordTextBox.Enabled = true;
+            loginAuthButton.Enabled = true;
+            loginErrorLabel.Enabled = true;
+
+
+
+            this.Controls.Add(loginTitleLabel);
+            this.Controls.Add(loginUsernameTextBox);
+            this.Controls.Add(loginPasswordTextBox);
+            this.Controls.Add(loginAuthButton);
+            this.Controls.Add(loginErrorLabel);
+        }
+
+        #endregion loginWindow
 
         public ImapClientForm()
         {
