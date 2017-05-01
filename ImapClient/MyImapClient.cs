@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Windows.Forms;
 
 namespace ImapClient
@@ -15,6 +16,7 @@ namespace ImapClient
         StringBuilder sb = new StringBuilder();
         int port = 993;
         bool secure = false;
+        int tagNumber = 0;
 
         public ImapClientState ClientState { get; set; }
 
@@ -23,34 +25,53 @@ namespace ImapClient
             ClientState = ImapClientState.NotConnected;
         }
 
-        // 0 - success
-        public int Noop()
+        private void Write(string command)
         {
-            //if (secure)
-            //{
-            //    sb = new StringBuilder();
-            //    buffer = new byte[2048];
-            //    bytes = ssl.Read(buffer, 0, 2048);
-            //    sb.Append(Encoding.ASCII.GetString(buffer));
-            //    MessageBox.Show(sb.ToString());
-            //}
-            //else
-            //{
-            //    sb = new StringBuilder();
-            //    buffer = new byte[2048];
-            //    bytes = tcpc.GetStream().Read(buffer, 0, 2048);
-            //    sb.Append(Encoding.ASCII.GetString(buffer));
-            //    MessageBox.Show(sb.ToString());
-            //}
+            byte[] dummy = Encoding.ASCII.GetBytes(tagNumber + " " + command + " \r\n");
+            if (secure)
+            {
+                ssl.Write(dummy, 0, dummy.Length);
+                ssl.Flush();
+            }
+            else
+            {
+                tcpc.GetStream().Write(dummy, 0, dummy.Length);
+            }
+            tagNumber++;
+        }
 
-            return 0;
+        private string Read()
+        {
+            if (secure)
+            {
+                sb = new StringBuilder();
+                buffer = new byte[2048];
+                bytes = ssl.Read(buffer, 0, 2048);
+                sb.Append(Encoding.ASCII.GetString(buffer));
+            }
+            else
+            {
+                sb = new StringBuilder();
+                buffer = new byte[2048];
+                bytes = tcpc.GetStream().Read(buffer, 0, 2048);
+                sb.Append(Encoding.ASCII.GetString(buffer));
+            }
+            return sb.ToString();
         }
 
         // 0 - Connected, 1 - Already connected
-        public int Connect(string address, bool sc)
+        public int Connect(string address, string portNumber, bool sc)
         {
             secure = sc;
-            port = secure? 993 : 143;
+            if(portNumber == "")
+            {
+                port = secure ? 993 : 143;
+            }
+            else
+            {
+                port = Int32.Parse(portNumber);
+            }
+
             if(ClientState == ImapClientState.NotConnected)
             {
                 try
@@ -67,7 +88,25 @@ namespace ImapClient
                         ssl.AuthenticateAsClient(address);
                         ssl.Flush();
                     }
+                    Read();
+                    if (!secure)
+                    {
+                        Write("CAPABILITY");
+                        if (Read().IndexOf("STARTTLS") != 0)
+                        {
+                            Write("STARTTLS");
+                            Read();
+                            ssl = new System.Net.Security.SslStream(tcpc.GetStream());
+                            ssl.AuthenticateAsClient(address);
+                            ssl.Flush();
+                            secure = true;
+                        }
+                    }
+                    Write("CAPABILITY");
+                    MessageBox.Show(Read());
 
+
+                    ClientState = ImapClientState.NotAuthenticated;
                     return 0;
                 }
                 catch (System.Net.Sockets.SocketException ex)
@@ -75,12 +114,8 @@ namespace ImapClient
                     throw ex;
                 }
                 catch (Exception ex)
-                {
+                {   
                     throw ex;
-                }
-                finally
-                {
-                    ClientState = ImapClientState.NotAuthenticated;
                 }
             }
             else

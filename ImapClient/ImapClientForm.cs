@@ -39,7 +39,10 @@ namespace ImapClient
             connectErrorLabel.Enabled = true;
             connectSecure.Enabled = true;
             connectSecureLabel.Enabled = true;
-            connectButton.Enabled = true;
+            if(connectAddressInput.Text != "Server Address")
+            {
+                connectButton.Enabled = true;
+            }
 
             connectButton.Left = (this.ClientSize.Width - connectButton.Width) / 2;
             connectButton.Top = (this.ClientSize.Height - connectButton.Height + 60) / 2;
@@ -117,7 +120,16 @@ namespace ImapClient
             }
             try
             {
-                imapClient.Connect(connectAddressInput.Text, connectSecure.Checked);
+                string[] addr;
+                addr = connectAddressInput.Text.Split(':');
+                if(addr.Length != 1)
+                {
+                    imapClient.Connect(addr[0], addr[1], connectSecure.Checked);
+                }
+                else
+                {
+                    imapClient.Connect(addr[0], "", connectSecure.Checked);
+                } 
             }
             catch(Exception)
             {
@@ -133,28 +145,32 @@ namespace ImapClient
         TextBox     loginPasswordTextBox;
         Button      loginAuthButton;
         Label       loginErrorLabel;
+        Button      loginDisconnectButton;
         #endregion loginWindowElements
         #region loginWindow
 
-        private void costructLoginWindow(string errorMessage)
+        private void constructLoginWindow(string errorMessage)
         {
             DAW();
             this.MinimumSize = new Size(500, 400);
-            loginErrorLabel.Text = errorMessage;
+            //loginErrorLabel.Text = errorMessage;
 
             loginTitleLabel.Enabled = true;
             loginUsernameTextBox.Enabled = true;
             loginPasswordTextBox.Enabled = true;
             loginAuthButton.Enabled = true;
             loginErrorLabel.Enabled = true;
+            loginDisconnectButton.Enabled = true;
 
-
+            //connectButton.Left = (this.ClientSize.Width - connectButton.Width) / 2;
+            //connectButton.Top = (this.ClientSize.Height - connectButton.Height + 60) / 2;
 
             this.Controls.Add(loginTitleLabel);
             this.Controls.Add(loginUsernameTextBox);
             this.Controls.Add(loginPasswordTextBox);
             this.Controls.Add(loginAuthButton);
             this.Controls.Add(loginErrorLabel);
+            this.Controls.Add(loginDisconnectButton);
         }
 
         #endregion loginWindow
