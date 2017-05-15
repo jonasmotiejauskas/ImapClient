@@ -9,7 +9,28 @@ using System.Windows.Forms;
 
 namespace ImapClient
 {
-    //enum ImapClientState {NotConnected, NotAuthenticated, Authenticated, Selected}
+    struct ImapMailMessage
+    {
+        public string Uid { get; set; }
+        public string Subject { get; set; }
+        public string Date { get; set; }
+        public string From { get; set; }
+        public string To { get; set; }
+
+        public ImapMailMessage(string u, string s, string d, string f, string t)
+        {
+            Uid = u;
+            Subject = s;
+            Date = d;
+            From = f;
+            To = t;
+        }
+
+        public override string ToString()
+        {
+            return Subject;
+        }
+    }
 
     class MyImapClient
     {
@@ -20,8 +41,6 @@ namespace ImapClient
         StringBuilder sb = new StringBuilder();      
         int tagNumber = 0;
         bool secure;
-
-        //public ImapClientState ClientState { get; set; }
 
         public MyImapClient()
         {
@@ -198,13 +217,6 @@ namespace ImapClient
                 Read(true);
                 return 0;
             }
-            //result = result.Substring(result.IndexOf(tagNum.ToString()), result.IndexOf("\r\n"));
-            //resultSplit = result.Split(' ');
-            //if (resultSplit[1] == "OK")
-            //{
-            //    //ClientState = ImapClientState.Authenticated;
-            //    return 0;
-            //}
             return 1;
         }
 
@@ -245,9 +257,9 @@ namespace ImapClient
             return ListAllNodes();
         }
 
-        public List<string> Select(string name)
+        public List<ImapMailMessage> Select(string name)
         {
-            List<string> res = new List<string>();
+            List<ImapMailMessage> res = new List<ImapMailMessage>();
 
             Write("select "+name);
             if(Read(false).Contains("OK"))
@@ -262,6 +274,11 @@ namespace ImapClient
                     Write("fetch "+uid+ " body.peek[header.fields (to from subject date)]");
                     string ret = Read(false);
 
+                    string subj = "";
+                    string from = "";
+                    string to   = "";
+                    string date = "";
+
                     using (StringReader reader = new StringReader(ret))
                     {
                         string line;
@@ -269,34 +286,61 @@ namespace ImapClient
                         {
                             if (line.Contains("Subject"))
                             {
-                                if (line.Contains("utf-8?b?") || line.Contains("UTF-8?B?"))
+                                if (line.Contains("=?"))
                                 {
-                                    line = line.Substring(line.IndexOf("?") + 9);
-                                    line = line.Remove(line.IndexOf("?")); 
-                                    byte[] data = Convert.FromBase64String(line);
-                                    line = Encoding.UTF8.GetString(data);
-                                    res.Add(line);
+                                    line = line.Substring(line.IndexOf("=?") + 2);
+                                    string encoding = line.Remove(line.IndexOf("?"));
+                                    line = line.Substring(line.IndexOf("?") + 1);
+                                    string mode = line.Remove(line.IndexOf("?"));
+                                    line = line.Substring(line.IndexOf("?") + 1);
+                                    line = line.Remove(line.IndexOf("?"));
+                                    if(mode == "b" || mode == "B")
+                                    {
+                                        byte[] data = Convert.FromBase64String(line);
+                                        line = Encoding.UTF8.GetString(data);
+                                        subj = line;
+                                    }
+                                    if(mode == "q" || mode == "Q")
+                                    {
+                                        subj = DecodeQuotedPrintables(line, encoding.ToLower());
+                                    }
                                 }
                                 else
                                 {
-                                    if(line.Contains("utf-8?q?") || line.Contains("UTF-8?Q?"))
-                                    {
-                                        line = line.Substring(line.IndexOf("?") + 9);
-                                        line = line.Remove(line.IndexOf("?"));
-                                        Attachment attachment = Attachment.CreateAttachmentFromString("utf-8", line);
-                                        res.Add(attachment.Name);
-                                    }
-                                    else
-                                    {
-                                        res.Add(line.Substring(8));
-                                    }
-                                }         
+                                    subj = line.Substring(8);
+                                }
+                            }
+                            else if (line.Contains("Date"))
+                            {
+                                date = line.Substring(5);
+                            }
+                            else if(line.Contains("From"))
+                            {
+                                from = line.Substring(5);
+                            }
+                            else if (line.Contains("To"))
+                            {
+                                to = line.Substring(3);
                             }
                         }
                     }
+                    res.Add(new ImapMailMessage(uid, subj, date, from, to));
                 }
             }
             return res;
+        }
+
+        public string FetchMesssageText(string uid)
+        {
+            Write("fetch " + uid + " body[text]");
+            string ret = Read(false);
+            ret = DecodeQuotedPrintables(ret, "windows - 1257");
+            ret = ret.Remove(ret.IndexOf("TAGGED"));
+            if (ret.IndexOf("charset") != -1)
+            {
+                ret = ret.Substring(ret.IndexOf("charset"));
+            }
+            return ret;
         }
 
         private static string DecodeQuotedPrintables(string input, string charSet)
@@ -314,10 +358,6 @@ namespace ImapClient
                 enc = new UTF8Encoding();
             }
 
-
-
-            ////parse looking for =XX where XX is hexadecimal
-            //var occurences = new Regex(@"(=[0-9A-Z]{2}){1,}", RegexOptions.Multiline);
             var occurences = new Regex("(\\=([0-9A-F][0-9A-F]))", RegexOptions.Multiline);
             var matches = occurences.Matches(input);
 
@@ -340,28 +380,5 @@ namespace ImapClient
 
             return input;
         }
-
-        //public string EntityToUnicode(string html)
-        //{
-        //    var replacements = new Dictionary<string, string>();
-        //    var regex = new Regex("&[a-zA-Z1-9]{2,5}-");
-        //    foreach (Match match in regex.Matches(html))
-        //    {
-        //        string rep = match.Value.Replace('-', ';');
-        //        if (!replacements.ContainsKey(rep))
-        //        {
-        //            var unicode = System.Net.WebUtility.HtmlDecode(rep);
-        //            if (unicode.Length == 1)
-        //            {
-        //                replacements.Add(match.Value, string.Concat("&#", Convert.ToInt32(unicode[0]), ";"));
-        //            }
-        //        }
-        //    }
-        //    foreach (var replacement in replacements)
-        //    {
-        //        html = html.Replace(replacement.Key, replacement.Value);
-        //    }
-        //    return html;
-        //}
     }
 }

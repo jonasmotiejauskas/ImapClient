@@ -1,11 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
 using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace ImapClient
@@ -17,6 +12,7 @@ namespace ImapClient
         DestructAllWindows DAW;
 
         MyImapClient imapClient = new MyImapClient();
+        List<ImapMailMessage> loadedMessages = new List<ImapMailMessage>();
 
         // Window for connecting to IMAP server
         #region connectWindowElements
@@ -255,11 +251,11 @@ namespace ImapClient
             AuthenticatedMails.Top = 50;
             AuthenticatedMails.Left = 260;
 
-            this.Controls.Add(AuthenticatedCommandText);
-            this.Controls.Add(AuthenticatedCommandButton);
+            //this.Controls.Add(AuthenticatedCommandText);
+            //this.Controls.Add(AuthenticatedCommandButton);
             this.Controls.Add(AuthenticatedMailboxNames);
-            //this.Controls.Add(AuthenticatedCreateMailbox);
-            //this.Controls.Add(AuthenticatedDeleteMailbox);
+            this.Controls.Add(AuthenticatedCreateMailbox);
+            this.Controls.Add(AuthenticatedDeleteMailbox);
             this.Controls.Add(AuthenticatedLogout);
             this.Controls.Add(AuthenticatedMails);
 
@@ -270,11 +266,19 @@ namespace ImapClient
             AuthenticatedCreateMailbox.MouseClick += AuthenticatedCreateMailbox_MouseClick;
             AuthenticatedDeleteMailbox.MouseClick += AuthenticatedDeleteMailbox_MouseClick;
             AuthenticatedMailboxNames.MouseDoubleClick += AuthenticatedMailboxNames_MouseDoubleClick;
+            AuthenticatedMails.DoubleClick += AuthenticatedMails_DoubleClick;
+        }
+
+        private void AuthenticatedMails_DoubleClick(object sender, EventArgs e)
+        {
+            string MsgText = imapClient.FetchMesssageText(loadedMessages[AuthenticatedMails.SelectedIndex].Uid);
+            new FormShowMessage(loadedMessages[AuthenticatedMails.SelectedIndex], MsgText).ShowDialog();
         }
 
         private void AuthenticatedMailboxNames_MouseDoubleClick(object sender, MouseEventArgs e)
         {
-            AuthenticatedMails.DataSource = imapClient.Select(AuthenticatedMailboxNames.SelectedItem.ToString());
+            loadedMessages = imapClient.Select(AuthenticatedMailboxNames.SelectedItem.ToString());
+            AuthenticatedMails.DataSource = loadedMessages;
         }
 
         private void AuthenticatedDeleteMailbox_MouseClick(object sender, MouseEventArgs e)
@@ -326,6 +330,7 @@ namespace ImapClient
             AuthenticatedCreateMailbox.MouseClick -= AuthenticatedCreateMailbox_MouseClick;
             AuthenticatedDeleteMailbox.MouseClick -= AuthenticatedDeleteMailbox_MouseClick;
             AuthenticatedMailboxNames.MouseDoubleClick -= AuthenticatedMailboxNames_MouseDoubleClick;
+            AuthenticatedMails.DoubleClick -= AuthenticatedMails_DoubleClick;
         }
 
         private void AuthenticatedCommandButton_MouseClick(object sender, MouseEventArgs e)
@@ -359,6 +364,88 @@ namespace ImapClient
             {
                 textbox.Text = "";
             }
+        }
+    }
+
+    class FormShowMessage : Form
+    {
+        ImapMailMessage message;
+        string text;
+        Label DateLabel = new Label() { Text = "Date"};
+        Label SubjectLabel = new Label() { Text = "Subject" };
+        Label FromLabel = new Label() { Text = "From" };
+        Label ToLabel = new Label() { Text = "To" };
+        TextBox DateTextBox = new TextBox() {  };
+        TextBox SubjectTextBox = new TextBox() {  };
+        TextBox ToTextBox = new TextBox() {  };
+        TextBox FromTextBox = new TextBox() {  };
+        TextBox BodyTextBox = new TextBox() {  };
+
+        public FormShowMessage(ImapMailMessage mail, string txt)
+        {
+            text = txt;
+            message = mail;
+            Text = "Mail Viewer";
+            ConstructViewer();
+        }
+
+        private void ConstructViewer()
+        {
+            BodyTextBox.Multiline = true;
+            BodyTextBox.ScrollBars = ScrollBars.Vertical;
+
+            DateTextBox.Text = message.Date;
+            SubjectTextBox.Text = message.Subject;
+            ToTextBox.Text = message.To;
+            FromTextBox.Text = message.From;
+            BodyTextBox.Text = text;
+
+            DateTextBox.Top = 10;
+            SubjectTextBox.Top = 40;
+            ToTextBox.Top = 70;
+            FromTextBox.Top = 100;
+            BodyTextBox.Top = 130;
+
+            DateLabel.Top = 10;
+            ToLabel.Top = 70;
+            FromLabel.Top = 100;
+            SubjectLabel.Top = 40;
+
+            DateTextBox.Left = 150;
+            SubjectTextBox.Left = 150;
+            ToTextBox.Left = 150;
+            FromTextBox.Left = 150;
+
+            DateLabel.Left = 30;
+            ToLabel.Left = 30;
+            FromLabel.Left = 30;
+            SubjectLabel.Left = 30;
+
+            DateTextBox.Width = 435;
+            SubjectTextBox.Width = 435;
+            ToTextBox.Width = 435;
+            FromTextBox.Width = 435;
+            BodyTextBox.Width = 585;
+
+            BodyTextBox.Height = 450;
+
+            DateTextBox.ReadOnly = true;
+            SubjectTextBox.ReadOnly = true;
+            ToTextBox.ReadOnly = true;
+            FromTextBox.ReadOnly = true;
+            BodyTextBox.ReadOnly = true;
+
+            this.MinimumSize = new Size(600, 500);
+
+            this.Controls.Add(DateTextBox);
+            this.Controls.Add(SubjectTextBox);
+            this.Controls.Add(ToTextBox);
+            this.Controls.Add(FromTextBox);
+            this.Controls.Add(BodyTextBox);
+            this.Controls.Add(DateLabel);
+            this.Controls.Add(SubjectLabel);
+            this.Controls.Add(ToLabel);
+            this.Controls.Add(FromLabel);
         }
     }
 }
